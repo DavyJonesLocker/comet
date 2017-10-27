@@ -1,6 +1,8 @@
 defmodule CometTest do
   use ExUnit.Case
 
+  @moduletag :capture_log
+
   setup do
     {:ok, pid} = start_supervised(ChromeLauncher)
     {:ok, pid: pid}

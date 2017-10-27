@@ -12,25 +12,10 @@ defmodule CometTest.CacheWorker do
     assert info != :undefined
   end
 
-  test "can insert into the ets table via GenServer.cast", %{pid: pid} do
-    GenServer.cast(pid, {:insert, "/foo", "bar"})
-    :sys.get_state(pid)
-    [{"/foo", "bar"}] = :ets.lookup(:comet_cache, "/foo")
-  end
-
   test "can insert into the ets table via function", %{pid: pid} do
     Comet.CacheWorker.insert("/foo", "bar")
     :sys.get_state(pid)
     [{"/foo", "bar"}] = :ets.lookup(:comet_cache, "/foo")
-  end
-
-  test "can expire specific keys via GenServer.cast", %{pid: pid} do
-    :ets.insert(:comet_cache, {"/foo", "bar"})
-    :ets.insert(:comet_cache, {"/baz", "qux"})
-    GenServer.cast(pid, {:expire, "/foo"})
-    :sys.get_state(pid)
-    [] = :ets.lookup(:comet_cache, "/foo")
-    [{"/baz", "qux"}] = :ets.lookup(:comet_cache, "/baz")
   end
 
   test "can expire specific keys via function", %{pid: pid} do
@@ -42,15 +27,6 @@ defmodule CometTest.CacheWorker do
     [{"/baz", "qux"}] = :ets.lookup(:comet_cache, "/baz")
   end
 
-  test "can expire all keys via GenServer.cast", %{pid: pid} do
-    :ets.insert(:comet_cache, {"/foo", "bar"})
-    :ets.insert(:comet_cache, {"/baz", "qux"})
-    GenServer.cast(pid, :expire_all)
-    :sys.get_state(pid)
-    [] = :ets.lookup(:comet_cache, "/foo")
-    [] = :ets.lookup(:comet_cache, "/baz")
-  end
-
   test "can expire all keys via function", %{pid: pid} do
     :ets.insert(:comet_cache, {"/foo", "bar"})
     :ets.insert(:comet_cache, {"/baz", "qux"})
@@ -58,11 +34,6 @@ defmodule CometTest.CacheWorker do
     :sys.get_state(pid)
     [] = :ets.lookup(:comet_cache, "/foo")
     [] = :ets.lookup(:comet_cache, "/baz")
-  end
-
-  test "can get with a key via GenServer.call", %{pid: pid} do
-    :ets.insert(:comet_cache, {"/foo", "bar"})
-    "bar" = GenServer.call(pid, {:get, "/foo"})
   end
 
   test "can get from with a key via function" do

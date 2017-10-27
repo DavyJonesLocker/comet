@@ -2,6 +2,8 @@ defmodule CometTest.Plug do
   use ExUnit.Case
   use Plug.Test
 
+  @moduletag :capture_log
+
   defmodule TabWorker do
     use Comet.TabWorker
 

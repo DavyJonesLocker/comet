@@ -25,7 +25,7 @@ defmodule Comet.Mixfile do
 
   defp deps do
     [{:chrome_remote_interface, "~> 0.0.6"},
-     {:chrome_launcher, "~> 0.0.3"},
+     {:chrome_launcher, "~> 0.0.4"},
      {:poolboy, "~> 1.5.1"},
      {:plug, "~> 1.0"},
      {:ex_doc, "~> 0.18.1", only: :dev, runtime: false}]
