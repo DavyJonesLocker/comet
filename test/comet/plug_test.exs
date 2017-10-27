@@ -77,7 +77,7 @@ defmodule CometTest.Plug do
     "/?ssr=true" = response.resp_body
   end
 
-  test "can override query_query/1" do
+  test "can override build_query/1" do
     response =
       conn(:get, "/ssr?foo=bar")
       |> MyPlug.call([])

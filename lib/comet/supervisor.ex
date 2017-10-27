@@ -45,13 +45,12 @@ defmodule Comet.Supervisor do
   1. `:poolboy`
   """
   def init(:ignore), do: :ignore
-  def init(:ignore), do: :ignore
   def init([pool_opts, worker_opts]) do
     pool_opts = Keyword.merge(@default_pool_opts, pool_opts)
 
     children = [
       worker(Comet.CacheWorker, []),
-      worker(Comet.ChromeWorker, []),
+      worker(ChromeLauncher, []),
       :poolboy.child_spec(:comet_pool, pool_opts, worker_opts)
     ]
 

@@ -245,7 +245,7 @@ defmodule Comet.TabWorker do
         url = Keyword.get(opts, :launch_url)
         timeout = Keyword.get(opts, :timeout, @init_timeout)
 
-        server = Comet.server()
+        server = Comet.server(opts)
         {tab, pid} = Comet.new_tab(server)
         Comet.enable(pid)
 

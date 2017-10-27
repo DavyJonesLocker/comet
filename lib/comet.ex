@@ -10,8 +10,8 @@ defmodule Comet do
   @doc """
   Returns a new Chrome server
   """
-  def server do
-    ChromeRemoteInterface.Session.new()
+  def server(opts \\ []) do
+    ChromeRemoteInterface.Session.new(opts)
   end
 
   @doc """

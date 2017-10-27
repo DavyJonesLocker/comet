@@ -31,9 +31,10 @@ defmodule CometTest.TabWorker do
     def after_request(state), do: super(state)
   end
 
-  setup do
-    opts = [launch_url: "data:text/html,<h1>Hello World</h1>"]
-    {:ok, chrome_pid} = start_supervised(%{id: Comet.ChromeWorker, start: {Comet.ChromeWorker, :start_link, []}})
+  setup context do
+    port = :erlang.phash2(context.test, 100) + 9000
+    opts = [launch_url: "data:text/html,<h1>Hello World</h1>", port: port]
+    {:ok, chrome_pid} = start_supervised({ChromeLauncher, [remote_debugging_port: port]})
     {:ok, worker_pid} = start_supervised(%{id: TabWorker, start: {TabWorker, :start_link, [opts]}})
     {:ok, %{chrome_pid: chrome_pid, worker_pid: worker_pid}}
   end

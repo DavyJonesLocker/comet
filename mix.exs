@@ -1,4 +1,4 @@
-defmodule HeadlessTest.Mixfile do
+defmodule Comet.Mixfile do
   use Mix.Project
 
   @version "0.1.0"
@@ -24,8 +24,8 @@ defmodule HeadlessTest.Mixfile do
   end
 
   defp deps do
-    [{:chrome_remote_interface, path: "../chrome-remote-interface"},
-     {:chrome_launcher, path: "../chrome-launcher"},
+    [{:chrome_remote_interface, "~> 0.0.6"},
+     {:chrome_launcher, "~> 0.0.3"},
      {:poolboy, "~> 1.5.1"},
      {:plug, "~> 1.0"},
      {:ex_doc, "~> 0.18.1", only: :dev, runtime: false}]

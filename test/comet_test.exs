@@ -2,7 +2,7 @@ defmodule CometTest do
   use ExUnit.Case
 
   setup do
-    {:ok, pid} = start_supervised(%{id: Comet.ChromeWorker, start: {Comet.ChromeWorker, :start_link, []}})
+    {:ok, pid} = start_supervised(ChromeLauncher)
     {:ok, pid: pid}
   end
 
