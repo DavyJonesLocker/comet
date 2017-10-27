@@ -1,6 +1,8 @@
 defmodule CometTest.TabWorker do
   use ExUnit.Case
 
+  @moduletag :capture_log
+
   defmodule TabWorker do
     use Comet.TabWorker
 
@@ -33,7 +35,7 @@ defmodule CometTest.TabWorker do
 
   setup do
     opts = [launch_url: "data:text/html,<h1>Hello World</h1>"]
-    {:ok, chrome_pid} = start_supervised(%{id: Comet.ChromeWorker, start: {Comet.ChromeWorker, :start_link, []}})
+    {:ok, chrome_pid} = start_supervised(ChromeLauncher)
     {:ok, worker_pid} = start_supervised(%{id: TabWorker, start: {TabWorker, :start_link, [opts]}})
     {:ok, %{chrome_pid: chrome_pid, worker_pid: worker_pid}}
   end

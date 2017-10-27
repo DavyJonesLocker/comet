@@ -2,10 +2,12 @@ language: elixir
 elixir:
   - 1.5.2
 otp_release:
-  - 20.1
+  - 19.3
 sudo: false # to use faster container based build environment
 addons:
   chrome: beta
+env:
+  - CHROME_PATH=/usr/bin/google-chrome-beta
 cache:
   directories:
     - _build

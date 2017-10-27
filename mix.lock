@@ -1,6 +1,6 @@
 %{"certifi": {:hex, :certifi, "2.0.0", "a0c0e475107135f76b8c1d5bc7efb33cd3815cb3cf3dea7aefdd174dabead064", [:rebar3], [], "hexpm"},
-  "chrome_launcher": {:git, "https://github.com/andrewvy/chrome-launcher.git", "9a45c7b1450a77988b19ef53095ffad94e37bc2c", []},
-  "chrome_remote_interface": {:hex, :chrome_remote_interface, "0.0.4", "bd9117a08cef1256f078ef9c112db881444bed6b3e670b7434471b035d8dcfa1", [:mix], [{:hackney, "~> 1.8 or ~> 1.7 or ~> 1.6", [hex: :hackney, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}, {:websockex, "~> 0.4.0", [hex: :websockex, repo: "hexpm", optional: false]}], "hexpm"},
+  "chrome_launcher": {:hex, :chrome_launcher, "0.0.4", "961186b9e861e6e9a78f6c5322cfa877fe16a212a4b088588a19498da429e5a4", [:mix], [{:erlexec, "~> 1.7", [hex: :erlexec, repo: "hexpm", optional: false]}], "hexpm"},
+  "chrome_remote_interface": {:hex, :chrome_remote_interface, "0.0.6", "01025b50e9f9d3f53aacf5fb0f67bb3ebd9582930d6663da925bc941aa3142db", [:mix], [{:hackney, "~> 1.8 or ~> 1.7 or ~> 1.6", [hex: :hackney, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}, {:websockex, "~> 0.4.0", [hex: :websockex, repo: "hexpm", optional: false]}], "hexpm"},
   "earmark": {:hex, :earmark, "1.2.3", "206eb2e2ac1a794aa5256f3982de7a76bf4579ff91cb28d0e17ea2c9491e46a4", [], [], "hexpm"},
   "erlexec": {:hex, :erlexec, "1.7.1", "6ddbd40fa202084ed0bdaf95a50c334acaa5644ae213b903cd4094a78ae79734", [], [], "hexpm"},
   "ex_doc": {:hex, :ex_doc, "0.18.1", "37c69d2ef62f24928c1f4fdc7c724ea04aecfdf500c4329185f8e3649c915baf", [], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
