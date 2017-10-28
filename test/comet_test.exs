@@ -12,6 +12,10 @@ defmodule CometTest do
     %ChromeRemoteInterface.Server{host: "localhost", port: 9222} = Comet.server()
   end
 
+  test "server can customize the host and port" do
+    %ChromeRemoteInterface.Server{host: "example.com", port: 9555} = Comet.server(host: "example.com", port: 9555)
+  end
+
   test "can create a new tab and pid" do
     server = Comet.server()
 
