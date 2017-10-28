@@ -49,13 +49,16 @@ defmodule CometTest.Plug do
   end
 
   setup do
-    pool_opts = [
-      worker_module: TabWorker
+    opts = [
+      worker: [
+        launch_url: "data:text/html,<h1>Hello World</h1>"
+      ],
+      pool: [
+        worker_module: TabWorker
+      ],
+      cache_worker: true
     ]
-    worker_opts = [
-      launch_url: "data:text/html,<h1>Hello World</h1>"
-    ]
-    {:ok, pid} = start_supervised({Comet.Supervisor, [pool_opts, worker_opts]})
+    {:ok, pid} = start_supervised({Comet.Supervisor, opts})
     {:ok, pid: pid}
   end
 

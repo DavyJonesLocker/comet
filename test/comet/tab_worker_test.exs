@@ -6,6 +6,32 @@ defmodule CometTest.TabWorker do
   defmodule TabWorker do
     use Comet.TabWorker
 
+    def before_launch([launch_url: "known error"], _state) do
+      {:error, "known error"}
+    end
+    def before_launch([launch_url: "unknown error"], _state) do
+      :error
+    end
+    def before_launch([launch_url: "data:text/html,before_launch_override"], state) do
+      {:ok, Map.put(state, :before_launch, true)}
+    end
+    def before_launch(_opts, state), do: {:ok, state}
+
+    def after_launch([launch_url: "data:text/html,after_launch_override"], state) do
+      {:ok, Map.put(state, :after_launch, true)}
+    end
+    def after_launch(_opts, state), do: {:ok, state}
+
+    def before_navigate([launch_url: "data:text/html,before_navigate_override"], state) do
+      {:ok, Map.put(state, :before_navigate, true)}
+    end
+    def before_navigate(_opts, state), do: {:ok, state}
+
+    def after_navigate([launch_url: "data:text/html,after_navigate_override"], state) do
+      {:ok, Map.put(state, :after_navigate, true)}
+    end
+    def after_navigate(_opts, state), do: {:ok, state}
+
     def before_visit("/before_visit", _state) do
       "/before_visit?foo=true"
     end
@@ -40,34 +66,76 @@ defmodule CometTest.TabWorker do
     {:ok, %{chrome_pid: chrome_pid, worker_pid: worker_pid}}
   end
 
-  test "when worker inits navigates to `launch_url`", %{worker_pid: worker_pid} do
-    %{pid: tab_pid} = :sys.get_state(worker_pid)
-    {:ok, %{"result" => %{"entries" => entries}}} = ChromeRemoteInterface.RPC.Page.getNavigationHistory(tab_pid)
-    [%{"url" => "about:blank"}, %{"url" => "data:text/html,<h1>Hello World</h1>"}] = entries
+  describe "init lifecycle" do
+    test "init can ignore" do
+      :ignore = TabWorker.init(:ignore)
+    end
+
+    test "when worker inits navigates to `launch_url`", %{worker_pid: worker_pid} do
+      %{pid: tab_pid} = :sys.get_state(worker_pid)
+      {:ok, %{"result" => %{"entries" => entries}}} = ChromeRemoteInterface.RPC.Page.getNavigationHistory(tab_pid)
+      [%{"url" => "about:blank"}, %{"url" => "data:text/html,<h1>Hello World</h1>"}] = entries
+    end
+
+    test "before_launch can be overridden" do
+      opts = [launch_url: "data:text/html,before_launch_override"]
+      {:ok, state} = TabWorker.init(opts)
+      assert state.before_launch
+    end
+
+    test "after_launch can be overridden" do
+      opts = [launch_url: "data:text/html,after_launch_override"]
+      {:ok, state} = TabWorker.init(opts)
+      assert state.after_launch
+    end
+
+    test "before_navigate can be overridden" do
+      opts = [launch_url: "data:text/html,before_navigate_override"]
+      {:ok, state} = TabWorker.init(opts)
+      assert state.before_navigate
+    end
+
+    test "after_navigate can be overridden" do
+      opts = [launch_url: "data:text/html,after_navigate_override"]
+      {:ok, state} = TabWorker.init(opts)
+      assert state.after_navigate
+    end
+
+    test "init returns {:stop, reason} when known error occurs" do
+      opts = [launch_url: "known error"]
+      {:stop, "known error"} = TabWorker.init(opts)
+    end
+
+    test "init returns {:stop, :unknown} when unknown error occurs" do
+      opts = [launch_url: "unknown error"]
+      {:stop, :unknown} = TabWorker.init(opts)
+    end
   end
 
-  test "default visit returns 501", %{worker_pid: worker_pid} do
-    resp = GenServer.call(worker_pid, {:request, "/"})
+  describe "request lifecycle" do
+    test "default visit returns 501", %{worker_pid: worker_pid} do
+      resp = GenServer.call(worker_pid, {:request, "/"})
 
-    assert resp.status == 501
-    assert String.contains?(resp.resp_body, "Not Implemented")
-  end
+      assert resp.status == 501
+      assert String.contains?(resp.resp_body, "Not Implemented")
+    end
 
-  test "before_visit can be overridden", %{worker_pid: worker_pid} do
-    %{status: 200, resp_body: "before_visit"} = GenServer.call(worker_pid, {:request, "/before_visit"})
-  end
+    test "before_visit can be overridden", %{worker_pid: worker_pid} do
+      %{status: 200, resp_body: "before_visit"} = GenServer.call(worker_pid, {:request, "/before_visit"})
+    end
 
-  test "visit can be overridden", %{worker_pid: worker_pid} do
-    %{status: 200, resp_body: "visit"} = GenServer.call(worker_pid, {:request, "/visit"})
-  end
+    test "visit can be overridden", %{worker_pid: worker_pid} do
+      %{status: 200, resp_body: "visit"} = GenServer.call(worker_pid, {:request, "/visit"})
+    end
 
-  test "after visit can be overridden", %{worker_pid: worker_pid} do
-    %{status: 201, resp_body: "after_visit"} = GenServer.call(worker_pid, {:request, "/after_visit"})
-  end
+    test "after visit can be overridden", %{worker_pid: worker_pid} do
+      %{status: 201, resp_body: "after_visit"} = GenServer.call(worker_pid, {:request, "/after_visit"})
+    end
 
-  test "after_request can be overridden", %{worker_pid: worker_pid} do
-    :sys.replace_state(worker_pid, fn(state) -> Map.put(state, :tries, 0) end)    
-    GenServer.cast(worker_pid, :after_request)
-    %{tries: 1} = :sys.get_state(worker_pid)
+    test "after_request can be overridden", %{worker_pid: worker_pid} do
+      :sys.replace_state(worker_pid, fn(state) -> Map.put(state, :tries, 0) end)    
+      GenServer.cast(worker_pid, :after_request)
+      %{tries: 1} = :sys.get_state(worker_pid)
+    end
   end
 end
