@@ -13,8 +13,7 @@ defmodule Comet.Supervisor do
 
       children = [
         ...
-
-        supervisor(Comet.Supervisor, [Application.get_env(:comet, :supervisor, :ignore), Application.get_env(:comet, :worker, :ignore)])
+        {Comet.Supervisor, [Application.get_env(:my_app, :comet, :ignore)]}
       ]
   """
 
@@ -25,35 +24,43 @@ defmodule Comet.Supervisor do
     strategy: :fifo
   ]
 
-  # def start_link([pool_opts, worker_opts]) do
+  @doc false
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: :comet_supervisor)
   end
 
-  @doc """
-  Init the Supervisor
+  @doc false
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      restart: :permanent,
+      type: :supervisor
+    }
+  end
 
-  The `init` function takes two arguments:
-
-  * `poolboy_supervisor_args` - Please see poolboy's documentation on args.
-  * `poolboy_worker_args` - These args are used with `Comet.TabWorker`
-
-  This supervisor uses a `rest_for_one` strategy. The order of the supervised processes:
-
-  1. `Comet.CacheWorker`
-  1. `Comet.ChromeWorker`
-  1. `:poolboy`
-  """
+  @doc false
   def init(:ignore), do: :ignore
-  def init([pool_opts, worker_opts]) do
-    pool_opts = Keyword.merge(@default_pool_opts, pool_opts)
+  def init(opts) do
+    left_merge = fn(_, v, _) -> v end
+    pool_opts = 
+      opts
+      |> Keyword.get(:pool, [])
+      |> Keyword.merge(@default_pool_opts, left_merge)
 
+    worker_opts = Keyword.get(opts, :worker, [])
     children = [
-      worker(Comet.CacheWorker, []),
-      worker(ChromeLauncher, []),
+      ChromeLauncher,
       :poolboy.child_spec(:comet_pool, pool_opts, worker_opts)
     ]
 
-    supervise(children, strategy: :rest_for_one)
+    Keyword.get(opts, :cache_worker)
+    |> case do
+      nil -> children
+      false -> children
+      true -> List.insert_at(children, 1, Comet.CacheWorker)
+      mod -> List.insert_at(children, 1, mod)
+    end
+    |> Supervisor.init(strategy: :rest_for_one)
   end
 end

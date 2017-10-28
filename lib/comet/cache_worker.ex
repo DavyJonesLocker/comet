@@ -25,6 +25,16 @@ defmodule Comet.CacheWorker do
     {:ok, %{table: table}}
   end
 
+  @doc false
+  def child_spec(_opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, []},
+      restart: :permanent,
+      type: :worker
+    }
+  end
+
   @doc """
   Get a value from the cache for a given key
 
