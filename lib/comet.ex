@@ -9,6 +9,11 @@ defmodule Comet do
 
   @doc """
   Returns a new Chrome server
+
+  ## Options
+
+  * `host` - the host of the Chrome server
+  * `port` - the port the Chrome server is running on
   """
   def server(opts \\ []) do
     ChromeRemoteInterface.Session.new(opts)
