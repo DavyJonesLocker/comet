@@ -41,20 +41,6 @@ defmodule CometTest.Supervisor do
     assert Supervisor.count_children(pid).workers == 2
   end
 
-  test "starts Comet.CacheWorker when `true` for `cache_worker` in opts" do
-    opts = [
-      cache_worker: true,
-      pool: [
-        worker_module: TabWorker
-      ],
-      worker: [
-        launch_url: "about:blank"
-      ]
-    ]
-    {:ok, pid} = start_supervised({Comet.Supervisor, opts})
-    assert Supervisor.count_children(pid).workers == 3
-  end
-
   test "starts CustomCacheWorker when given to `cache_worker` in opts" do
     opts = [
       cache_worker: CustomCacheWorker,

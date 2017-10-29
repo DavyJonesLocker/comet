@@ -21,7 +21,6 @@ defmodule Comet.Supervisor do
   * `cache_worker:` - allow you to opt-in to having `Comet.Supervisor` manage a cache. The advantage here is the cache itself will be tied to the lifecycle of the Supervisor
   and can be restarted at the appropriate time if necessary.
   Valid options:
-    * `true` - will opt-in to `Comet.CacheWorker`
     * `Comet.CacheWorker` - you can supply the module directly
     * Your own custom caching module. If you go this route, please refer to `Comet.CacheWorker`'s documentation.
 
@@ -91,7 +90,6 @@ defmodule Comet.Supervisor do
     |> case do
       nil -> children
       false -> children
-      true -> List.insert_at(children, 1, Comet.CacheWorker)
       mod -> List.insert_at(children, 1, mod)
     end
     |> Supervisor.init(strategy: :rest_for_one)

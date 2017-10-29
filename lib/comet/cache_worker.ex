@@ -1,7 +1,6 @@
 defmodule Comet.CacheWorker do
   use GenServer
 
-  @behaviour Comet.Cache
   @name :comet_cache
 
   @moduledoc """
@@ -38,50 +37,6 @@ defmodule Comet.CacheWorker do
     }
   end
 
-  @doc """
-  Get a value from the cache for a given key
-
-  ## Example
-
-      "bar" = Comet.CacheWorker.get("foo")
-  """
-  def get(key) do
-    case :ets.lookup(@name, key) do
-      [{^key, value}] -> value
-      [] -> :no_cache
-    end
-  end
-
-  @doc """
-  Insert a value for a given key into the cache
-
-  ## Example
-
-      Comet.CacheWorker.insert("/foo", "bar")
-  """
-  def insert(key, value) do
-    :ets.insert(@name, {key, value})
-  end
-
-  @doc """
-  Expire a given key/value pair in the cache
-
-  ## Example
-
-      Comet.CacheWorker.expire("/foo")
-  """
-  def expire(key) do
-    :ets.delete(@name, key)
-  end
-
-  @doc """
-  Expire all key/value pairs in the cache
-
-  ## Example
-
-      Comet.CacheWorker.expire_all()
-  """
-  def expire_all() do
-    :ets.delete_all_objects(@name)
-  end
+  @doc false
+  def name, do: @name
 end

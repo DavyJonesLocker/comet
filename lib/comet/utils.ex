@@ -1,9 +1,13 @@
 defmodule Comet.Utils do
+  @moduledoc false
+
+  @doc false
   def atomize_keys(map) when is_map(map) do
     Enum.into(map, %{}, fn({key, value}) -> {atomize_key(key), value} end)
   end
   def atomize_keys(other), do: other
 
+  @doc false
   def atomize_key(key) when is_binary(key) do
     key
     |> String.replace("-", "_")

@@ -53,7 +53,7 @@ defmodule Comet.TabWorker do
   how to route each request to the application.
   """
 
-  Module.add_doc(__MODULE__, 262, :def, {:after_launch, 2}, (quote do: [opts, state]), """
+  Module.add_doc(__MODULE__, 266, :def, {:after_launch, 2}, (quote do: [opts, state]), """
   Run any code after the worker tab launches.
 
   Default is `noop`. This function is intended to be overridden.
@@ -75,7 +75,7 @@ defmodule Comet.TabWorker do
   The return value should be `{:ok, Map}`, if if for any reason an error occurs `{:error, reason}`
   """)
 
-  Module.add_doc(__MODULE__, 261, :def, {:after_navigate, 2}, (quote do: [opts, state]), """
+  Module.add_doc(__MODULE__, 265, :def, {:after_navigate, 2}, (quote do: [opts, state]), """
   Run any code after the tab navigation.
 
   Default is `noop`. This function is intended to be overridden.
@@ -97,7 +97,7 @@ defmodule Comet.TabWorker do
   The return value should be `{:ok, state}`, if if for any reason an error occurs `{:error, reason}`
   """)
 
-  Module.add_doc(__MODULE__, 314, :def, {:after_visit, 2}, (quote do: [state]), """
+  Module.add_doc(__MODULE__, 336, :def, {:after_visit, 2}, (quote do: [state]), """
   Run any code after the visit if changes to the response are desirable.
 
   Default is `noop`. This function is intended to be overridden.
@@ -109,17 +109,17 @@ defmodule Comet.TabWorker do
       defmoule MyApp.TabWorker do
         use Comet.TabWorker
 
-        def after_visit(response, state) do
+        def after_visit(%Comet.Response{} = response, state) do
           # work
 
           response
         end
       end
 
-  The return value should be the `response` object.
+  The return value **must** be a `Comet.Response` struct.
   """)
 
-  Module.add_doc(__MODULE__, 237, :def, {:before_launch, 2}, (quote do: [opts, state]), """
+  Module.add_doc(__MODULE__, 242, :def, {:before_launch, 2}, (quote do: [opts, state]), """
   Run any code before the worker tab launches.
 
   Default is `noop`. This function is intended to be overridden.
@@ -141,7 +141,7 @@ defmodule Comet.TabWorker do
   The return value should be `{:ok, state}`, if if for any reason an error occurs `{:error, reason}`
   """)
 
-  Module.add_doc(__MODULE__, 260, :def, {:before_navigate, 2}, (quote do: [opts, state]), """
+  Module.add_doc(__MODULE__, 264, :def, {:before_navigate, 2}, (quote do: [opts, state]), """
   Run any code before the worker tab navigates.
 
   Default is `noop`. This function is intended to be overridden.
@@ -163,7 +163,7 @@ defmodule Comet.TabWorker do
   The return value should be `{:ok, state}`, if if for any reason an error occurs `{:error, reason}`
   """)
 
-  Module.add_doc(__MODULE__, 302, :def, {:get_resp, 1}, (quote do: [state]), """
+  Module.add_doc(__MODULE__, 324, :def, {:get_resp, 1}, (quote do: [state]), """
   The blocking function to retrieve the response from your application.
 
   The default for this function will block on a `{:chrome_remote_interface, "Runtime.evaluate", data}` message.
@@ -179,7 +179,7 @@ defmodule Comet.TabWorker do
   to retrieve the response object.
   """)
 
-  Module.add_doc(__MODULE__, 310, :def, {:visit, 2}, (quote do: [opts, state]), """
+  Module.add_doc(__MODULE__, 335, :def, {:visit, 2}, (quote do: [opts, state]), """
   Hook for triggering a visit action within your application.
 
   By default this function returns `:not_implemented` and *must* be overridden.
@@ -202,7 +202,7 @@ defmodule Comet.TabWorker do
   that will be set into the `conn` of `Comet.Plug`.
   """)
 
-  Module.add_doc(__MODULE__, 398, :def, {:handle_info, 2}, (quote do: [message, state]), """
+  Module.add_doc(__MODULE__, 314, :def, {:handle_info, 2}, (quote do: [message, state]), """
   Override the default `handle_info` handlers for the GenServer
 
   There may be custom messages that you want to listen and respond to from the Chrome tab. For that
@@ -333,7 +333,7 @@ defmodule Comet.TabWorker do
 
       def before_visit(path, _state), do: path
       def visit(_path, _state), do: :not_implemented
-      def after_visit(response, _state), do: response
+      def after_visit(%Comet.Response{} = response, _state), do: response
 
       def after_request(state) do
         :poolboy.checkin(@pool, self())

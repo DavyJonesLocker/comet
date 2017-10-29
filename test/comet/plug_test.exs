@@ -45,7 +45,15 @@ defmodule CometTest.Plug do
   end
 
   defmodule MyCachePlug do
-    use Comet.Plug, cache: true
+    use Comet.Plug, cache: Comet.Cache
+  end
+
+  defmodule MyNamespacedPlug do
+    use Comet.Plug, namespace: "other-ssr"
+  end
+
+  defmodule MyQueryParamPlug do
+    use Comet.Plug, query_param: "other-ssr"
   end
 
   setup do
@@ -56,7 +64,7 @@ defmodule CometTest.Plug do
       pool: [
         worker_module: TabWorker
       ],
-      cache_worker: true
+      cache_worker: Comet.CacheWorker
     ]
     {:ok, pid} = start_supervised({Comet.Supervisor, opts})
     {:ok, pid: pid}
@@ -137,5 +145,27 @@ defmodule CometTest.Plug do
 
     418 = response.status
     "I'm a teapot" = response.resp_body
+  end
+
+  test "can use other namespaces" do
+    response =
+      conn(:get, "/other-ssr")
+      |> MyNamespacedPlug.call([])
+
+    assert response.halted
+    ["text/html; charset=utf-8"] = Plug.Conn.get_resp_header(response, "content-type")
+    200 = response.status
+    "/?other-ssr=true" = response.resp_body
+  end
+
+  test "can customize query_param" do
+    response =
+      conn(:get, "/ssr")
+      |> MyQueryParamPlug.call([])
+
+    assert response.halted
+    ["text/html; charset=utf-8"] = Plug.Conn.get_resp_header(response, "content-type")
+    200 = response.status
+    "/?other-ssr=true" = response.resp_body
   end
 end

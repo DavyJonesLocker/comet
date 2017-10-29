@@ -3,7 +3,7 @@ defmodule Comet.Plug do
   Plug macro module for use in your application.
 
   This module will handle the inbound requests for your application.
-  By default it assumes anything nested under `/ssr/` should be delegated
+  By default it assumes anything nested under `/ssr` should be delegated
   to the tab worker for rendering.
 
   This module cannot be used directly, it should be `use`d in your app:
@@ -18,6 +18,14 @@ defmodule Comet.Plug do
   Each publicly documented function can be overriden in your
   custom module.
 
+  You can change the URL `namespace` this plug works under as well as the `query_param`
+  appended to the `path`:
+
+      defmodule MyApp.Plugs.SSR do
+        use Comet.Plug, namespace: "other-ssr", query_param: "foobar"
+      end
+
+  If you do not define `query_param` it will inherit the value for `namespace`.
 
   ## Caching
 
@@ -27,27 +35,26 @@ defmodule Comet.Plug do
   the cache:
 
       defmodule MyApp.Plug.SSR do
-        use Comet.Plug, cache: true
+        use Comet.Plug, cache: Comet.Cache
       end
 
-  When you opt into the cache with `cache: true` the `Comet.CacheWorker` cache
-  will be used. If you'd like to use your own custom cache module:
+  If you'd like to use your own custom cache module:
 
       defmodule MyApp.Plug.SSR do
         use Comet.Plug, cache: MyCacher
       end
 
   Your cache module must respond to `get/1` and `insert/2`. See the definitions of
-  those functions in `Comet.CacheWorker` for more details.
+  those functions in `Comet.Cache` for more details.
   """
 
-  Module.add_doc(__MODULE__, 71, :def, {:build_query, 1}, (quote do: [query_string]), """
+  Module.add_doc(__MODULE__, 92, :def, {:build_query, 1}, (quote do: [query_string]), """
   Injects the `ssr=true` query param and return a new `query_string`
   
   You can override this function.
   """)
 
-  Module.add_doc(__MODULE__, 78, :def, {:build_path, 2}, (quote do: [path, query_string]), """
+  Module.add_doc(__MODULE__, 99, :def, {:build_path, 2}, (quote do: [path, query_string]), """
   Joins the original `path` and `query_string` into a single path
 
   ## Example
@@ -58,7 +65,7 @@ defmodule Comet.Plug do
   You can override this function.
   """)
 
-  Module.add_doc(__MODULE__, 82, :def, {:handle_response, 2}, (quote do: [conn, response]), """
+  Module.add_doc(__MODULE__, 103, :def, {:handle_response, 2}, (quote do: [conn, response]), """
   Sets the proper response in the `conn`.
 
   Sets the `resp_body`, `resp_headers, and `status` of the `conn`.
@@ -69,24 +76,20 @@ defmodule Comet.Plug do
   """)
 
   defmacro __using__(opts) do
-    using(opts)
-  end
+    namespace = Keyword.get(opts, :namespace, "ssr")
+    query_param = Keyword.get(opts, :query_param, namespace)
+    cache_mod = Keyword.get(opts, :cache)
 
-  defp using([]) do
-    using([cache: false])
-  end
-  defp using([cache: true]) do
-    using([cache: Comet.CacheWorker])
-  end
-  defp using([cache: cache_mod]) do
     quote do
       import Plug.Conn
 
+      @namespace unquote(namespace)
+      @query_param unquote(query_param)
       @cache_mod unquote(cache_mod)
       @pool :comet_pool
 
       def init(_opts), do: nil
-      def call(%{method: "GET", path_info: ["ssr" | path], query_string: query_string} = conn, _opts) do
+      def call(%{method: "GET", path_info: [@namespace | path], query_string: query_string} = conn, _opts) do
         query = build_query(query_string)
 
         path
@@ -99,7 +102,7 @@ defmodule Comet.Plug do
       def build_query(query_string) do
         query_string
         |> URI.decode_query()
-        |> Map.put("ssr", true)
+        |> Map.put(@query_param, true)
         |> URI.encode_query()
       end
 
@@ -127,10 +130,8 @@ defmodule Comet.Plug do
         end
       end
 
-      defp get_cache_for(path) when @cache_mod != false do
-        @cache_mod.get(path)
-      end
-      defp get_cache_for(_) when @cache_mod == false, do: :no_cache
+      defp get_cache_for(_path) when is_nil(@cache_mod), do: :no_cache
+      defp get_cache_for(path), do: @cache_mod.get(path)
 
       defp get_no_cache_for(path) do
         worker_pid = :poolboy.checkout(@pool)
@@ -143,12 +144,12 @@ defmodule Comet.Plug do
         response
       end
 
-      defp cache_response(response, path) when @cache_mod != false do
+      defp cache_response(response, _path) when is_nil(@cache_mod), do: response
+      defp cache_response(response, path)  do
         @cache_mod.insert(path, response)
 
         response
       end
-      defp cache_response(response, _path) when @cache_mod == false, do: response
     end
   end
 end
