@@ -11,7 +11,6 @@ defmodule Comet.Mixfile do
      start_permanent: Mix.env == :prod,
      source_url: "https://github.com/dockyard/comet",
      docs: [
-       extra_section: "RECIPES",
        extras: extras(),
        main: "Comet",
        group_for_extras: group_for_extras(),
