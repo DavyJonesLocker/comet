@@ -1,17 +1,20 @@
 defmodule Comet.CacheWorker do
   use GenServer
 
+  @behaviour Comet.Cache
   @name :comet_cache
 
   @moduledoc """
-  Generic cache `ets` based cache worker
+  Generic `:ets` based cache worker
 
   This cache worker has a lifecycle tied to the `Comet.Supervisor` process. If that process
-  dies the `ets` table associated with this cache is lost.
+  dies the `:ets` table associated with this cache is lost.
 
   This cache will work off of the request path being the unique key to retrieve against.
 
-  You can use the `get/1`, `insert/2`, `expire/1`, `expire/0` functions.
+  You can use the `get/1`, `insert/2`, `expire/1`, `expire_all/0` functions.
+
+  If you decide to provide your own custom Cache please refer to the documentation in `Comet.Cache`.
   """
 
   @doc false

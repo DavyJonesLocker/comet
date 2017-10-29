@@ -7,10 +7,10 @@ defmodule CometTest.Plug do
   defmodule TabWorker do
     use Comet.TabWorker
 
-    # we are using the `resp_body` to return the value of
+    # we are using the `body` to return the value of
     # `path` for assertion testing
     def visit(path, %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, resp_body: '#{path}'})")
+      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: '#{path}'})")
     end
   end
 
@@ -126,11 +126,11 @@ defmodule CometTest.Plug do
 
     :sys.get_state(:comet_cache)
 
-    [{"/?ssr=true", %{status: 200, resp_body: "/?ssr=true"}}] = :ets.lookup(:comet_cache, "/?ssr=true")
+    [{"/?ssr=true", %{status: 200, body: "/?ssr=true"}}] = :ets.lookup(:comet_cache, "/?ssr=true")
   end
 
   test "serves response from cache" do
-    :ets.insert(:comet_cache, {"/?ssr=true", %{status: 418, resp_body: "I'm a teapot"}})
+    :ets.insert(:comet_cache, {"/?ssr=true", %Comet.Response{status: 418, body: "I'm a teapot"}})
     response =
       conn(:get, "/ssr")
       |> MyCachePlug.call([])

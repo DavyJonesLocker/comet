@@ -293,14 +293,15 @@ defmodule Comet.TabWorker do
           |> visit(state)
           |> case do
             :not_implemented ->
-              resp_body = render_template("Not Implemented", """
+              body = render_template("Not Implemented", """
                 To retrieve the response from your app you must
                 override <code>`Comet.Plug.visit/2`</code>.
               """)
 
-              %{status: 501, resp_body: resp_body}
+              %{status: 501, body: body}
             :ok -> get_resp(state)
           end
+          |> Comet.Response.normalize()
           |> after_visit(state)
 
         {:reply, response, state}
@@ -326,7 +327,7 @@ defmodule Comet.TabWorker do
             Comet.Utils.atomize_keys(response)
         after
           @resp_timeout ->
-            %{status: 504, resp_body: render_template("Gateway Timeout", "App did not respond within #{@resp_timeout}ms")}
+            %{status: 504, body: render_template("Gateway Timeout", "App did not respond within #{@resp_timeout}ms")}
         end
       end
 

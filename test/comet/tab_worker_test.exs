@@ -38,18 +38,18 @@ defmodule CometTest.TabWorker do
     def before_visit(path, state), do: super(path, state)
 
     def visit("/before_visit?foo=true", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, resp_body: 'before_visit'})")
+      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: 'before_visit'})")
     end
     def visit("/visit", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, resp_body: 'visit'})")
+      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: 'visit'})")
     end
     def visit("/after_visit", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 201, resp_body: 'visit'})")
+      Comet.promise_eval(pid, "Promise.resolve({status: 201, body: 'visit'})")
     end
     def visit(path, state), do: super(path, state)
 
-    def after_visit(%{status: 201, resp_body: "visit"} = response, _state) do
-      %{response | resp_body: "after_visit"}
+    def after_visit(%{status: 201, body: "visit"} = response, _state) do
+      %{response | body: "after_visit"}
     end
     def after_visit(response, state), do: super(response, state)
 
@@ -117,19 +117,19 @@ defmodule CometTest.TabWorker do
       resp = GenServer.call(worker_pid, {:request, "/"})
 
       assert resp.status == 501
-      assert String.contains?(resp.resp_body, "Not Implemented")
+      assert String.contains?(resp.body, "Not Implemented")
     end
 
     test "before_visit can be overridden", %{worker_pid: worker_pid} do
-      %{status: 200, resp_body: "before_visit"} = GenServer.call(worker_pid, {:request, "/before_visit"})
+      %{status: 200, body: "before_visit"} = GenServer.call(worker_pid, {:request, "/before_visit"})
     end
 
     test "visit can be overridden", %{worker_pid: worker_pid} do
-      %{status: 200, resp_body: "visit"} = GenServer.call(worker_pid, {:request, "/visit"})
+      %{status: 200, body: "visit"} = GenServer.call(worker_pid, {:request, "/visit"})
     end
 
     test "after visit can be overridden", %{worker_pid: worker_pid} do
-      %{status: 201, resp_body: "after_visit"} = GenServer.call(worker_pid, {:request, "/after_visit"})
+      %{status: 201, body: "after_visit"} = GenServer.call(worker_pid, {:request, "/after_visit"})
     end
 
     test "after_request can be overridden", %{worker_pid: worker_pid} do
