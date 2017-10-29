@@ -61,11 +61,7 @@ defmodule Comet.Plug do
   Module.add_doc(__MODULE__, 82, :def, {:handle_response, 2}, (quote do: [conn, response]), """
   Sets the proper response in the `conn`.
 
-  The content-type for the response is set to `"text/html"`.
-  
-  If the `status` is a String, convert to an Integer.
-
-  Sets the `status` and `body` of the `conn`.
+  Sets the `resp_body`, `resp_headers, and `status` of the `conn`.
 
   Will `halt` any more Plugs.
 
@@ -111,12 +107,9 @@ defmodule Comet.Plug do
         "/" <> Enum.join(path, "/") <> "?" <> query
       end
 
-      def handle_response(%{status: status} = response, conn) when is_binary(status) do
-        handle_response(%{response | status: String.to_integer(status)}, conn)
-      end
-      def handle_response(%{status: status, resp_body: body}, conn) do
+      def handle_response(%Comet.Response{body: body, headers: headers, status: status}, conn) do
         conn
-        |> put_resp_content_type("text/html")
+        |> merge_resp_headers(headers)
         |> send_resp(status, body)
         |> halt()
       end

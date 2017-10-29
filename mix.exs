@@ -13,6 +13,7 @@ defmodule Comet.Mixfile do
      docs: [
        extra_section: "RECIPES",
        extras: extras(),
+       main: "Comet",
        group_for_extras: group_for_extras(),
        source_ref: "v#{@version}"
      ],
@@ -33,6 +34,7 @@ defmodule Comet.Mixfile do
 
   defp extras() do
     [
+      "README.md",
       "recipes/ember.md"
     ]
   end
