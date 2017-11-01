@@ -1,4 +1,5 @@
 defmodule Comet.Cache do
+  require Comet.CacheWorker
   @moduledoc """
   Generic `:ets` based cache
   This cache will work off of the request path being the unique path to retrieve against.
@@ -27,7 +28,7 @@ defmodule Comet.Cache do
   @callback get(path :: String) :: %Comet.Response{body: String, headers: List, status: Integer}
   @callback insert(path :: String, response :: %Comet.Response{body: String, headers: List, status: Integer}) :: term
 
-  @name Comet.CacheWorker.name
+  Comet.CacheWorker.use_name()
 
   @doc """
   Get a response from the cache for a given path

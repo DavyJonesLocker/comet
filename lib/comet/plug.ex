@@ -18,14 +18,14 @@ defmodule Comet.Plug do
   Each publicly documented function can be overriden in your
   custom module.
 
-  You can change the URL `namespace` this plug works under as well as the `query_param`
+  You can change the URL `scope` this plug works under as well as the `query_param`
   appended to the `path`:
 
       defmodule MyApp.Plugs.SSR do
-        use Comet.Plug, namespace: "other-ssr", query_param: "foobar"
+        use Comet.Plug, scope: "other-ssr", query_param: "foobar"
       end
 
-  If you do not define `query_param` it will inherit the value for `namespace`.
+  If you do not define `query_param` it will inherit the value for `scope`.
 
   ## Caching
 
@@ -46,6 +46,9 @@ defmodule Comet.Plug do
 
   Your cache module must respond to `get/1` and `insert/2`. See the definitions of
   those functions in `Comet.Cache` for more details.
+
+  Please note that only responses with status codes within the 200..299 range are cached.
+  All other responses are not cached.
   """
 
   Module.add_doc(__MODULE__, 92, :def, {:build_query, 1}, (quote do: [query_string]), """
@@ -76,20 +79,20 @@ defmodule Comet.Plug do
   """)
 
   defmacro __using__(opts) do
-    namespace = Keyword.get(opts, :namespace, "ssr")
-    query_param = Keyword.get(opts, :query_param, namespace)
+    scope = Keyword.get(opts, :scope, "ssr")
+    query_param = Keyword.get(opts, :query_param, scope)
     cache_mod = Keyword.get(opts, :cache)
 
     quote do
       import Plug.Conn
 
-      @namespace unquote(namespace)
+      @scope unquote(scope)
       @query_param unquote(query_param)
       @cache_mod unquote(cache_mod)
       @pool :comet_pool
 
       def init(_opts), do: nil
-      def call(%{method: "GET", path_info: [@namespace | path], query_string: query_string} = conn, _opts) do
+      def call(%{method: "GET", path_info: [@scope | path], query_string: query_string} = conn, _opts) do
         query = build_query(query_string)
 
         path
@@ -130,13 +133,15 @@ defmodule Comet.Plug do
         end
       end
 
-      defp get_cache_for(_path) when is_nil(@cache_mod), do: :no_cache
-      defp get_cache_for(path), do: @cache_mod.get(path)
+      if @cache_mod do
+        defp get_cache_for(path) when not is_nil(@cache_mod), do: @cache_mod.get(path)
+      end
+      defp get_cache_for(_path), do: :no_cache
 
       defp get_no_cache_for(path) do
         worker_pid = :poolboy.checkout(@pool)
         response =
-          GenServer.call(worker_pid, {:request, path})
+          GenServer.call(worker_pid, {:request, path}, :infinity)
           |> cache_response(path)
 
         GenServer.cast(worker_pid, :after_request)
@@ -144,12 +149,14 @@ defmodule Comet.Plug do
         response
       end
 
-      defp cache_response(response, _path) when is_nil(@cache_mod), do: response
-      defp cache_response(response, path)  do
-        @cache_mod.insert(path, response)
+      if @cache_mod do
+        defp cache_response(%Comet.Response{status: status} = response, path) when not is_nil(@cache_mod) and status in 200..299 do
+          @cache_mod.insert(path, response)
 
-        response
+          response
+        end
       end
+      defp cache_response(%Comet.Response{} = response, _path), do: response
     end
   end
 end

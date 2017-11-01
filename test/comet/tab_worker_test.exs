@@ -108,7 +108,7 @@ defmodule CometTest.TabWorker do
 
     test "init returns {:stop, :unknown} when unknown error occurs" do
       opts = [launch_url: "unknown error"]
-      {:stop, :unknown} = TabWorker.init(opts)
+      {:stop, {:unknown, :error}} = TabWorker.init(opts)
     end
   end
 

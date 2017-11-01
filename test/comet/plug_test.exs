@@ -48,8 +48,8 @@ defmodule CometTest.Plug do
     use Comet.Plug, cache: Comet.Cache
   end
 
-  defmodule MyNamespacedPlug do
-    use Comet.Plug, namespace: "other-ssr"
+  defmodule MyScopedPlug do
+    use Comet.Plug, scope: "other-ssr"
   end
 
   defmodule MyQueryParamPlug do
@@ -147,10 +147,10 @@ defmodule CometTest.Plug do
     "I'm a teapot" = response.resp_body
   end
 
-  test "can use other namespaces" do
+  test "can use other scopes" do
     response =
       conn(:get, "/other-ssr")
-      |> MyNamespacedPlug.call([])
+      |> MyScopedPlug.call([])
 
     assert response.halted
     ["text/html; charset=utf-8"] = Plug.Conn.get_resp_header(response, "content-type")

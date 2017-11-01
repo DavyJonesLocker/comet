@@ -56,14 +56,8 @@ defmodule CometTest do
     {_tab, pid} = Comet.new_tab(server)
     url = "data:text/html,<h1>Hello World</h1>"
     Comet.enable(pid)
-    Comet.navigate_to(pid, url)
-
-    {:ok, %{"result" => %{"result" => %{"value" => ^url}}}} = receive do
-      {:chrome_remote_interface, "Page.loadEventFired", _data} ->
-        ChromeRemoteInterface.RPC.Runtime.evaluate(pid, %{expression: "location.href"})
-    after
-      1_000 -> :fail
-    end
+    :ok = Comet.navigate_to(pid, url)
+    {:ok, %{"result" => %{"result" => %{"value" => ^url}}}} = ChromeRemoteInterface.RPC.Runtime.evaluate(pid, %{expression: "location.href"})
   end
 
   test "promise_eval" do

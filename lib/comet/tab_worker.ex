@@ -235,7 +235,7 @@ defmodule Comet.TabWorker do
           {:ok, state}
         else
           {:error, reason} -> {:stop, reason}
-          _ -> {:stop, :unknown}
+          unknown -> {:stop, {:unknown, unknown}}
         end
       end
 
@@ -251,13 +251,10 @@ defmodule Comet.TabWorker do
 
         state = Map.merge(state, %{server: server, tab: tab, pid: pid})
         {:ok, state} = before_navigate(opts, state)
-        :ok = Comet.navigate_to(pid, url)
-
-        receive do
-          {:chrome_remote_interface, "Page.loadEventFired", _frame_data} ->
-            after_navigate(opts, state)
-        after
-          timeout -> {:error, :init_timeout}
+        
+        case Comet.navigate_to(pid, url, timeout) do
+          :ok -> after_navigate(opts, state)
+          {:error, reason} = error -> error
         end
       end
 
@@ -320,6 +317,7 @@ defmodule Comet.TabWorker do
 
         {:stop, reason}
       end
+      def terminate(reason, _state), do: {:stop, reason}
 
       def get_resp(%{pid: pid}) do
         receive do
