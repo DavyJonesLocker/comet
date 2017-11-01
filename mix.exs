@@ -20,7 +20,7 @@ defmodule Comet.Mixfile do
   end
 
   def application do
-    [extra_applications: [:logger]]
+    [extra_applications: [:logger, :poolboy, :chrome_launcher, :chrome_remote_interface, :plug]]
   end
 
   defp deps do

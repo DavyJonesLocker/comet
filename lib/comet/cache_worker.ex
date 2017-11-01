@@ -38,5 +38,9 @@ defmodule Comet.CacheWorker do
   end
 
   @doc false
-  def name, do: @name
+  defmacro use_name do
+    quote do
+      @name unquote(@name)
+    end
+  end
 end

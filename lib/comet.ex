@@ -61,9 +61,16 @@ defmodule Comet do
   Take note that [Page.loadEventFired](https://chromedevtools.github.io/devtools-protocol/tot/Page/#event-loadEventFired) is
   a standard event in the Chrome Protocol.
   """
-  def navigate_to(pid, url) do
+  def navigate_to(pid, url, timeout \\ 5000) do
     ChromeRemoteInterface.PageSession.subscribe(pid, "Page.loadEventFired")
     ChromeRemoteInterface.RPC.Page.navigate(pid, %{url: url}, async: self())
+
+    receive do
+      {:chrome_remote_interface, "Page.loadEventFired", _frame_data} ->
+        :ok
+    after
+      timeout -> {:error, :init_timeout}
+    end
   end
 
   @doc """
