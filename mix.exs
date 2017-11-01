@@ -10,6 +10,8 @@ defmodule Comet.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      source_url: "https://github.com/dockyard/comet",
+     package: package(),
+     description: description(),
      docs: [
        extras: extras(),
        main: "Comet",
@@ -21,6 +23,16 @@ defmodule Comet.Mixfile do
 
   def application do
     [extra_applications: [:logger, :poolboy, :chrome_launcher, :chrome_remote_interface, :plug]]
+  end
+
+  defp description(), do: "Quickly render your client side application from your server without the cost of maintaining \"isomorphic JavaScript\"."
+
+  defp package() do
+    [
+     maintainers: ["Brian Cardarella"],
+     licenses: ["MIT"],
+     links: %{"GitHub" => "https://github.com/DockYard/comet"} 
+    ]
   end
 
   defp deps do
