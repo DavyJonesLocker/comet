@@ -74,27 +74,32 @@ defmodule Comet do
   end
 
   @doc """
-  Exectue a promise-based JavaScript snippet on a given tab
+  Evaluate and return result of JavaScript expression on a given tab
 
-  This function is non-blocking but will message back the calling process with
-
-  `{:chrome_remote_interface, "Runtime.evaluate", data}`
-
-  when the promise has completed.
+  This function is blocking and will return the result of the expression.
+  If the result of the expression is a Promise it will block on
+  the promise resolving and return that result.
 
   ## Example
 
-      Comet.promise_eval(tab_pid, \"""
+      Comet.eval(tab_pid, \"""
         MyApp.visit(\#{path}).then((application) => {
           return application.getResponse();
         });
       \""")
   """
-  def promise_eval(pid, expression) do
+  def eval(pid, expression) do
     ChromeRemoteInterface.RPC.Runtime.evaluate(pid, %{
       awaitPromise: true,
       returnByValue: true,
-      expression: expression,
-    }, async: self())
+      expression: expression
+    })
+    |> case do
+      {:ok, %{"result" => %{"exceptionDetails" => %{"exception" => %{"className" => name, "description" => description}}}}} -> {:error, {name, description}}
+      {:ok, %{"result" => %{"result" => %{"value" => value}, "exceptionDetails" => %{"text" => "Uncaught (in promise)"}}}} -> {:reject, value}
+      {:ok, %{"result" => %{"result" => %{"value" => value}}}} -> {:ok, value}
+      {:error, %{"error" => %{"message" => message}}} -> {:error, message}
+      reason -> {:error, {:unknown, reason}}
+    end
   end
 end

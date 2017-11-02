@@ -36,7 +36,6 @@ defmodule Comet.TabWorker do
   1. `request/1`
     1. `before_visit/2`
     1. `visit/2`
-    1. `get_resp/1`
     1. `after_visit/2`
 
   1. `after_request/1`
@@ -163,35 +162,19 @@ defmodule Comet.TabWorker do
   The return value should be `{:ok, state}`, if if for any reason an error occurs `{:error, reason}`
   """)
 
-  Module.add_doc(__MODULE__, 324, :def, {:get_resp, 1}, (quote do: [state]), """
-  The blocking function to retrieve the response from your application.
-
-  The default for this function will block on a `{:chrome_remote_interface, "Runtime.evaluate", data}` message.
-  This is the result from a promise evaluation to trigger a `visit` action within your app.
-
-  The result of this promise should be a map that contains two values:
-
-  `%{status: 200, body: "some html..."}`
-
-  This response object will be used to set the response within the `conn` object of `Comet.Plug`.
-  
-  If you need to override this function you can do so and provide your own custom blocking code
-  to retrieve the response object.
-  """)
-
   Module.add_doc(__MODULE__, 335, :def, {:visit, 2}, (quote do: [opts, state]), """
   Hook for triggering a visit action within your application.
 
   By default this function returns `:not_implemented` and *must* be overridden.
 
-  It is recommended that you use `Comet.promise_eval/2` for running the necessary
+  It is recommended that you use `Comet.eval/2` for running the necessary
   JavaScript in your application to trigger a visit. The visit action within your client application
   should result in a promise. The promise itself should resolve to a JSON object with a `status` and `body` key:
   
   ## Example
 
       def visit(path, %{pid: pid}) do
-        Comet.promise_eval(pid, \"""
+        Comet.eval(pid, \"""
           MyApp.visit(\#{path}).then((application) => {
             return application.getResponse();
           });
@@ -200,18 +183,6 @@ defmodule Comet.TabWorker do
 
   The default `:not_implemented` return value will result in the worker returning a `%{status: 501: body: "Not Implemented"}` response
   that will be set into the `conn` of `Comet.Plug`.
-  """)
-
-  Module.add_doc(__MODULE__, 314, :def, {:handle_info, 2}, (quote do: [message, state]), """
-  Override the default `handle_info` handlers for the GenServer
-
-  There may be custom messages that you want to listen and respond to from the Chrome tab. For that
-  reason you can override the `handle_info` handler for this GenServer. If you decide to do this it is
-  recommended that you re-implement the default "catch-all" as the last function:
-
-      def handle_info(msg, state) do
-        {:noreply, state}
-      end
   """)
 
   defmacro __using__([]) do
@@ -296,7 +267,9 @@ defmodule Comet.TabWorker do
               """)
 
               %{status: 501, body: body}
-            :ok -> get_resp(state)
+            {:ok, response} -> response
+            {:reject, response} -> {response, status: 500} 
+            {:error, reason} -> %{status: 500, body: render_template("Internal Server Error", "Something went wrong: #{reason}")}
           end
           |> Comet.Response.normalize()
           |> after_visit(state)
@@ -305,7 +278,9 @@ defmodule Comet.TabWorker do
       end
 
       def handle_cast(:after_request, state) do
-        {:noreply, after_request(state)}
+        state = after_request(state)
+        :poolboy.checkin(@pool, self())
+        {:noreply, state}
       end
 
       def handle_info(msg, state) do
@@ -319,25 +294,11 @@ defmodule Comet.TabWorker do
       end
       def terminate(reason, _state), do: {:stop, reason}
 
-      def get_resp(%{pid: pid}) do
-        receive do
-          {:chrome_remote_interface, "Runtime.evaluate", %{"result" => %{"result" => %{"value" => response}}}} ->
-            Comet.Utils.atomize_keys(response)
-        after
-          @resp_timeout ->
-            %{status: 504, body: render_template("Gateway Timeout", "App did not respond within #{@resp_timeout}ms")}
-        end
-      end
-
       def before_visit(path, _state), do: path
       def visit(_path, _state), do: :not_implemented
       def after_visit(%Comet.Response{} = response, _state), do: response
 
-      def after_request(state) do
-        :poolboy.checkin(@pool, self())
-
-        state
-      end
+      def after_request(state), do: state
 
       defoverridable [
         before_launch: 2,
@@ -349,12 +310,9 @@ defmodule Comet.TabWorker do
 
         before_visit: 2,
         visit: 2,
-        get_resp: 1,
         after_visit: 2,
 
-        after_request: 1,
-
-        handle_info: 2
+        after_request: 1
       ]
     end
   end

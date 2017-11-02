@@ -38,13 +38,13 @@ defmodule CometTest.TabWorker do
     def before_visit(path, state), do: super(path, state)
 
     def visit("/before_visit?foo=true", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: 'before_visit'})")
+      Comet.eval(pid, "Promise.resolve({status: 200, body: 'before_visit'})")
     end
     def visit("/visit", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: 'visit'})")
+      Comet.eval(pid, "Promise.resolve({status: 200, body: 'visit'})")
     end
     def visit("/after_visit", %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 201, body: 'visit'})")
+      Comet.eval(pid, "Promise.resolve({status: 201, body: 'visit'})")
     end
     def visit(path, state), do: super(path, state)
 
