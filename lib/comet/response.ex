@@ -20,7 +20,7 @@ defmodule Comet.Response do
   @default_headers [{"content-type", "text/html; charset=utf-8"}]
   @default_status 200
 
-  defstruct body: @default_body, headers: @default_headers, status: @default_status
+  defstruct body: nil, headers: [], status: nil 
 
   @doc """
   Normalizes different response values into a `Comet.Response` struct
@@ -37,33 +37,51 @@ defmodule Comet.Response do
   * `Map` - `%{"content-type" => "text/html; charset=utf-8"}` -> `[{"content-type", "text/html; charset=utf-8"}]`
 
   This is done to maintain compatbility with `Plug.Conn`.
+
+  An options keyword list of default can be given:
+
+  * `body`
+  * `headers` - defaults to `#{inspect(@default_headers)}`
+  * `status` - defaults to `#{inspect(@default_status)}`
   """
-  def normalize(response) when is_binary(response) do
-    normalize(%{body: response})
+  def normalize(response, defaults \\ [])
+  def normalize({response, defaults}, _ignored), do: normalize(response, defaults)
+  def normalize(body, defaults) when is_binary(body) do
+    normalize(%{body: body}, defaults)
   end
 
-  def normalize(%{body: body} = response) when is_binary(body) do
-    response =
+  def normalize(%{body: body} = response, defaults) when is_binary(body) do
+    default_body = Keyword.get(defaults, :body, @default_body)
+    default_headers = Keyword.get(defaults, :headers, @default_headers) |> normalize_headers()
+    default_status = Keyword.get(defaults, :status, @default_status)
+
+    body = normalize_body(body, default_body)
+
+    headers =
       response
       |> Map.get(:headers, [])
       |> normalize_headers()
-      |> case do
-        [] -> response
-        headers -> Map.put(response, :headers, headers)
-      end
+      |> concat_default_headers(default_headers)
+
+    status =
+      response
+      |> Map.get(:status, default_status)
       |> coerce_status()
 
-    struct(__MODULE__, response)
+    struct(__MODULE__, %{body: body, headers: headers, status: status})
   end
 
-  def normalize(%{"body" => body} = response) when is_binary(body) do
+  def normalize(%{"body" => body} = response, defaults) when is_binary(body) do
     response
     |> convert()
-    |> normalize()
+    |> normalize(defaults)
   end
 
-  defp coerce_status(%{status: status} = response) when is_binary(status), do: %{response | status: String.to_integer(status)}
-  defp coerce_status(response), do: response
+  defp normalize_body(nil, default_body), do: default_body
+  defp normalize_body(body, _default_body), do: body
+
+  defp coerce_status(status) when is_binary(status), do: String.to_integer(status)
+  defp coerce_status(status), do: status
 
   defp convert(response) do
     Enum.reduce(["status", "body", "headers"], %{}, fn(key, new_response) ->
@@ -81,17 +99,16 @@ defmodule Comet.Response do
       [key, value] -> {String.downcase(key), value}
       {key, value} -> {String.downcase(key), value}
     end)
-    |> concat_default_headers()
   end
 
-  defp concat_default_headers(headers) do
+  defp concat_default_headers(headers, default_headers) do
     headers
-    |> filter_default_headers()
+    |> filter_default_headers(default_headers)
     |> Enum.concat(headers)
   end
 
-  defp filter_default_headers(headers) do
+  defp filter_default_headers(headers, default_headers) do
     headers = Enum.into(headers, %{}, &(&1))
-    Enum.filter(@default_headers, &(!Map.has_key?(headers, elem(&1, 0))))
+    Enum.filter(default_headers, &(!Map.has_key?(headers, elem(&1, 0))))
   end
 end

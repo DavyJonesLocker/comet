@@ -10,7 +10,7 @@ defmodule CometTest.Plug do
     # we are using the `body` to return the value of
     # `path` for assertion testing
     def visit(path, %{pid: pid}) do
-      Comet.promise_eval(pid, "Promise.resolve({status: 200, body: '#{path}'})")
+      Comet.eval(pid, "Promise.resolve({status: 200, body: '#{path}'})")
     end
   end
 

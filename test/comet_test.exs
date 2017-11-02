@@ -60,19 +60,17 @@ defmodule CometTest do
     {:ok, %{"result" => %{"result" => %{"value" => ^url}}}} = ChromeRemoteInterface.RPC.Runtime.evaluate(pid, %{expression: "location.href"})
   end
 
-  test "promise_eval" do
+  test "eval" do
     server = Comet.server()
     {_tab, pid} = Comet.new_tab(server)
     url = "data:text/html,<h1>Hello World</h1>"
     Comet.enable(pid)
     Comet.navigate_to(pid, url)
     value = "{foo: 'bar'}"
-    Comet.promise_eval(pid, "Promise.resolve(#{value})")
-
-    :ok = receive do
-      {:chrome_remote_interface, "Runtime.evaluate", %{"result" => %{"result" => %{"value" => %{"foo" => "bar"}}}}} -> :ok
-    after
-      1_000 -> :fail
-    end
+    {:ok, %{"foo" => "bar"}} = Comet.eval(pid, "Promise.resolve(#{value})")
+    {:ok, [1, 2, 3]} = Comet.eval(pid, "[1, 2, 3]")
+    {:error, "Object couldn't be returned by value"} = Comet.eval(pid, "Symbol.for('foo')")
+    {:error, {"ReferenceError", "ReferenceError: foo is not defined\n    at <anonymous>:1:1"}} = Comet.eval(pid, "foo")
+    {:reject, %{"foo" => "bar"}} = Comet.eval(pid, "Promise.reject(#{value})")
   end
 end

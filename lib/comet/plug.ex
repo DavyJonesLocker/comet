@@ -141,7 +141,7 @@ defmodule Comet.Plug do
       defp get_no_cache_for(path) do
         worker_pid = :poolboy.checkout(@pool)
         response =
-          GenServer.call(worker_pid, {:request, path}, :infinity)
+          GenServer.call(worker_pid, {:request, path})
           |> cache_response(path)
 
         GenServer.cast(worker_pid, :after_request)
