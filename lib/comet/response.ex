@@ -46,11 +46,13 @@ defmodule Comet.Response do
   """
   def normalize(response, defaults \\ [])
   def normalize({response, defaults}, _ignored), do: normalize(response, defaults)
-  def normalize(body, defaults) when is_binary(body) do
-    normalize(%{body: body}, defaults)
+  def normalize(body, defaults) when is_binary(body), do: normalize(%{body: body}, defaults)
+  def normalize(%{"body" => _body} = response, defaults) do
+    response
+    |> convert()
+    |> normalize(defaults)
   end
-
-  def normalize(%{body: body} = response, defaults) when is_binary(body) do
+  def normalize(%{body: body} = response, defaults) do
     default_body = Keyword.get(defaults, :body, @default_body)
     default_headers = Keyword.get(defaults, :headers, @default_headers) |> normalize_headers()
     default_status = Keyword.get(defaults, :status, @default_status)
@@ -69,12 +71,6 @@ defmodule Comet.Response do
       |> coerce_status()
 
     struct(__MODULE__, %{body: body, headers: headers, status: status})
-  end
-
-  def normalize(%{"body" => body} = response, defaults) when is_binary(body) do
-    response
-    |> convert()
-    |> normalize(defaults)
   end
 
   defp normalize_body(nil, default_body), do: default_body

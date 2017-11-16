@@ -134,9 +134,10 @@ defmodule Comet.Plug do
       end
 
       if @cache_mod do
-        defp get_cache_for(path) when not is_nil(@cache_mod), do: @cache_mod.get(path)
+        defp get_cache_for(path), do: @cache_mod.get(path)
+      else
+        defp get_cache_for(_path), do: :no_cache
       end
-      defp get_cache_for(_path), do: :no_cache
 
       defp get_no_cache_for(path) do
         worker_pid = :poolboy.checkout(@pool)
@@ -150,7 +151,7 @@ defmodule Comet.Plug do
       end
 
       if @cache_mod do
-        defp cache_response(%Comet.Response{status: status} = response, path) when not is_nil(@cache_mod) and status in 200..299 do
+        defp cache_response(%Comet.Response{status: status} = response, path) when status in 200..299 do
           @cache_mod.insert(path, response)
 
           response

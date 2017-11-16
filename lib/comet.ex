@@ -8,7 +8,7 @@ defmodule Comet do
   """
 
   @doc """
-  Returns a new Chrome server
+  Returns a ChromeRemoteInterface server object.
 
   ## Options
 
