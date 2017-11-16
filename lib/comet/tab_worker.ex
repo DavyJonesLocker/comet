@@ -225,7 +225,8 @@ defmodule Comet.TabWorker do
         
         case Comet.navigate_to(pid, url, timeout) do
           :ok -> after_navigate(opts, state)
-          {:error, reason} = error -> error
+          {_error, reason} -> {:error, reason}
+          error -> {:error, error}
         end
       end
 
@@ -260,7 +261,7 @@ defmodule Comet.TabWorker do
           |> before_visit(state)
           |> visit(state)
           |> case do
-            :not_implemented ->
+            {:error, :not_implemented} ->
               body = render_template("Not Implemented", """
                 To retrieve the response from your app you must
                 override <code>`Comet.Plug.visit/2`</code>.
@@ -295,7 +296,7 @@ defmodule Comet.TabWorker do
       def terminate(reason, _state), do: {:stop, reason}
 
       def before_visit(path, _state), do: path
-      def visit(_path, _state), do: :not_implemented
+      def visit(_path, _state), do: {:error, :not_implemented}
       def after_visit(%Comet.Response{} = response, _state), do: response
 
       def after_request(state), do: state
